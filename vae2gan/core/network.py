@@ -188,3 +188,6 @@ class Img2Dis(torch.nn.Module):
         x = self.sub_moudle(x)
 
         return x.reshape(x.size(0), -1)
+
+
+__all__ = ["Lat2Img", "Img2Dis"]
