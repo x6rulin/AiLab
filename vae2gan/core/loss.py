@@ -108,6 +108,9 @@ def D_logistic(D, fakes, reals):
 
 
 def D_logistic_simplegp(D, fakes, reals, r1_gamma=10.0, r2_gamma=0.0):
+    reals = torch.nn.Parameter(reals)
+    fakes = torch.nn.Parameter(fakes)
+
     real_scores_out = D(reals)
     fake_scores_out = D(fakes)
     loss = -torch.log(1 - torch.sigmoid(fake_scores_out)) # softplus(fake_scores_out)
