@@ -7,13 +7,15 @@ def _normalization(key, **kwargs):
     if key == 'none': return []
     if key == 'BN': return [torch.nn.BatchNorm2d(**kwargs)]
     if key == 'LN': return [torch.nn.LayerNorm(**kwargs)]
+    if key == 'IN': return [torch.nn.InstanceNorm2d(**kwargs)]
 
     raise RuntimeError(f"not supported normaliztion: '{key}'")
 
+
 _kwargs = lambda fmap, res: {'none': {}, \
                         'BN': dict(num_features=fmap), \
-                        'LN': dict(normalized_shape=(fmap, res, res))}
-
+                        'LN': dict(normalized_shape=(fmap, res, res)), \
+                        'IN': dict(num_features=fmap)}
 
 _activate = {
     'none': [lambda: [], 1.],
@@ -153,7 +155,7 @@ class Lat2Img(torch.nn.Module):
 class Img2Dis(torch.nn.Module):
 
     def __init__(self, num_dis, resolution=128, fmap_base=1024, fmap_decay=1.0, fmap_max=512,
-                 num_channels=3, use_wscale=True, normalization='BN', nonlinearity='lrelu'):
+                 num_channels=3, use_wscale=True, nonlinearity='lrelu', normalization='LN'):
         super(Img2Dis, self).__init__()
 
         resolution_log2 = int(log2(resolution))
