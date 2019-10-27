@@ -143,10 +143,11 @@ class Lat2Img(torch.nn.Module):
         self.torgb = _Conv2dLayer(self._nf(resolution_log2 - 1), num_channels, 1, 1, 0,
                                   use_wscale=use_wscale, nonlinearity='none', normalization='none')
 
-    def forward(self, x):
-        x = self.sub_module(x)
+    def forward(self, x, retain_bud: bool = False):
+        bud = self.sub_module(x)
+        flower = self.torgb(bud)
 
-        return x, self.torgb(x)
+        return [flower, (bud, flower)][retain_bud]
 
 
 class Img2Dis(torch.nn.Module):
