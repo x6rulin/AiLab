@@ -16,9 +16,9 @@ class Args(ArgParse):
     def __init__(self):
         super(Args, self).__init__(description="Generative Adversarial Networks.")
 
-        self.parser.add_argument("--betas", nargs=2, type=float, default=(0.5, 0.99), help="betas for optimizer Adam")
-        self.parser.add_argument("--loss", nargs=2, type=str, default=('wgan', 'wgan_gp'),
-                                 help="<wgan, saturating, nonsaturating> and <wgan, wgan_gp, hinge, hinge_gp, logistic, logistic_simplegp>")
+        self.parser.add_argument("--betas", nargs=2, type=float, default=(0., 0.99), help="betas for optimizer Adam")
+        self.parser.add_argument("--loss", nargs=2, type=str, default=('nonsaturating', 'logistic_simplegp'),
+                                 help="wgan | saturating | nonsaturating and wgan | wgan_gp, hinge | hinge_gp | logistic | logistic_simplegp")
         self.parser.add_argument("--nc", type=int, default=1, help="iterations of critic training for every mini-batch data")
         self.parser.add_argument("--ng", type=int, default=1, help="iterations of generator training for every mini-batch data")
         self.parser.add_argument("--img-dir", type=str, default='images', help="directory saving images generated")
