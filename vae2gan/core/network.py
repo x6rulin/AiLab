@@ -115,7 +115,7 @@ class Lat2Img(torch.nn.Module):
                                activate=activate, use_pixel_norm=use_pixel_norm,
                                normalization=normalization)
         self.growing = torch.nn.Sequential(*growing)
-        self.torgb = Conv2d(_nf(resolution_log2 - 1), num_channels, 1, 1, 0,
+        self.torgb = Conv2d(_nf(resolution_log2 - 1), num_channels, 1, 1, 0, bias=True,
                             gain=1., use_wscale=use_wscale)
 
     def forward(self, x, retain_bud: bool = False):
@@ -154,15 +154,18 @@ class Img2Dis(torch.nn.Module):
                 EpilogueLayer(fmap_out, res//2, activate, False, normalization),
             ])
 
-        self.fromrgb = Conv2d(num_channels, _nf(resolution_log2 - 1), 1, 1, 0,
-                              gain=gain, use_wscale=use_wscale)
+        self.fromrgb = torch.nn.Sequential(
+            Conv2d(num_channels, _nf(resolution_log2 - 1), 1, 1, 0, gain=gain,
+                   use_wscale=use_wscale),
+            EpilogueLayer(_nf(resolution_log2 - 1), resolution, activate, False, normalization),
+        )
         self.sieving = torch.nn.Sequential(*sieving)
         self.final = torch.nn.Sequential(
             Conv2d(_nf(1) + mbstd_num_features, _nf(1), 3, 1, 1, gain=gain, use_wscale=use_wscale),
             EpilogueLayer(_nf(1), 4, activate, False, normalization),
             Conv2d(_nf(1), _nf(1), 4, 1, 0, gain=gain, use_wscale=use_wscale),
             EpilogueLayer(_nf(1), 1, activate, False, normalization),
-            Conv2d(_nf(1), num_dis, 1, 1, 0, gain=1., use_wscale=use_wscale),
+            Conv2d(_nf(1), num_dis, 1, 1, 0, bias=True, gain=1., use_wscale=use_wscale),
         )
 
         self.mbstd_group_size = mbstd_group_size
