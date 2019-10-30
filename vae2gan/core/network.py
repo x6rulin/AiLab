@@ -29,12 +29,6 @@ _activate = {
 }
 
 
-def _norm_init(m):
-    if isinstance(m, (torch.nn.BatchNorm2d, torch.nn.LayerNorm)):
-        torch.nn.init.normal_(m.weight, 1., 0.02)
-        torch.nn.init.constant_(m.bias, 0.)
-
-
 class EpilogueLayer(torch.nn.Module):
     """Things to do at the end of each layer. """
     def __init__(self, fmap, size, activate, use_pixel_norm=False, normalization='none'):
@@ -49,8 +43,6 @@ class EpilogueLayer(torch.nn.Module):
             self.normalize = torch.nn.Sequential(
                 *_normalization(normalization, **_kwargs(fmap, size)[normalization]),
             )
-
-        self.apply(_norm_init)
 
     def forward(self, x):
         x = x + self.bias
