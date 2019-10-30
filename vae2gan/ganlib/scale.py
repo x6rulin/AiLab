@@ -68,16 +68,16 @@ class UpscaleConv2d(torch.nn.Module):
         assert kernel_size >= 1 and kernel_size % 2 == 1
         super(UpscaleConv2d, self).__init__()
 
+        stride = [1, 2][fused_scale]
+        padding, rem = divmod(kernel_size - stride, 2)
+        padding += rem == 1
+
         if not fused_scale:
-            padding, rem = divmod(kernel_size - 1, 2)
-            padding += rem == 1
             self.sub_module = Conv2d(in_channels, out_channels, kernel_size,
-                                     padding=padding, **kwargs)
+                                     stride, padding, **kwargs)
         else:
-            padding, rem = divmod(kernel_size - 2, 2)
-            padding += rem == 1
             self.sub_module = ConvTranspose2d(in_channels, out_channels, kernel_size,
-                                              2, padding=padding, **kwargs)
+                                              stride, padding, **kwargs)
 
         self.blur = lambda x: blur2d(x, blur_filter) if blur_filter else x
         self.register_buffer("fused_scale", torch.BoolTensor([fused_scale]))
@@ -98,16 +98,12 @@ class ConvDownscale2d(torch.nn.Module):
         assert kernel_size >= 1 and kernel_size % 2 == 1
         super(ConvDownscale2d, self).__init__()
 
-        if not fused_scale:
-            padding, rem = divmod(kernel_size - 1, 2)
-            padding += rem == 1
-            self.sub_module = Conv2d(in_channels, out_channels, kernel_size,
-                                     1, padding=padding, **kwargs)
-        else:
-            padding, rem = divmod(kernel_size - 2, 2)
-            padding += rem == 1
-            self.sub_module = Conv2d(in_channels, out_channels, kernel_size,
-                                     2, padding=padding, **kwargs)
+        stride = [1, 2][fused_scale]
+        padding, rem = divmod(kernel_size - stride, 2)
+        padding += rem == 1
+
+        self.sub_module = Conv2d(in_channels, out_channels, kernel_size,
+                                 stride, padding, **kwargs)
 
         self.blur = lambda x: blur2d(x, blur_filter) if blur_filter else x
         self.register_buffer("fused_scale", torch.BoolTensor([fused_scale]))
