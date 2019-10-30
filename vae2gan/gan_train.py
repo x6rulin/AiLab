@@ -18,7 +18,7 @@ class Args(ArgParse):
 
         self.parser.add_argument("--betas", nargs=2, type=float, default=(0., 0.99), help="betas for optimizer Adam")
         self.parser.add_argument("--loss", nargs=2, type=str, default=('nonsaturating', 'logistic_simplegp'),
-                                 help="wgan | saturating | nonsaturating and wgan | wgan_gp, hinge | hinge_gp | logistic | logistic_simplegp")
+                                 help="wgan | saturating | nonsaturating and wgan | wgan_gp | hinge | hinge_gp | logistic | logistic_simplegp")
         self.parser.add_argument("--nc", type=int, default=1, help="iterations of critic training for every mini-batch data")
         self.parser.add_argument("--ng", type=int, default=1, help="iterations of generator training for every mini-batch data")
         self.parser.add_argument("--img-dir", type=str, default='images', help="directory saving images generated")
@@ -113,8 +113,8 @@ if __name__ == "__main__":
     resolution, num_channels, _latent_size, num_dis = 128, 3, 128, 1
 
     _train_dataset = FFHQDataset(img_root, num_channels, resolution)
-    _gnet = Lat2Img(_latent_size, resolution, num_channels=num_channels, nonlinearity='prelu', normalization='BN')
-    _dnet = Img2Dis(num_dis, resolution, num_channels=num_channels, nonlinearity='prelu', normalization='LN')
+    _gnet = Lat2Img(_latent_size, num_channels, resolution=resolution, nonlinearity='prelu', normalization='LN')
+    _dnet = Img2Dis(num_dis, num_channels, resolution=resolution, nonlinearity='prelu', normalization='LN')
 
     _train = GanTrain(_latent_size, _gnet, _dnet, _train_dataset)
     _train()

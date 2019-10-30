@@ -83,8 +83,8 @@ if __name__ == "__main__":
     resolution, num_channels, _latent_size, num_dis = 128, 3, 128, 2
 
     _train_dataset = FFHQDataset(img_root, num_channels, resolution)
-    _enet = Img2Dis(num_dis, resolution, num_channels=num_channels, nonlinearity='prelu', normalization='BN')
-    _dnet = Lat2Img(_latent_size, resolution, num_channels=num_channels, nonlinearity='prelu', normalization='LN')
+    _enet = Img2Dis(num_dis, num_channels, resolution=resolution, nonlinearity='prelu', normalization='LN')
+    _dnet = Lat2Img(_latent_size, num_channels, resolution=resolution, nonlinearity='prelu', normalization='LN')
 
     _train = VaeTrain(_latent_size, _enet, _dnet, _train_dataset)
     _train()
