@@ -1,13 +1,13 @@
 import sys
 import os
 import torch
-import torchvision
+from torchvision.utils import save_image
 
 rootpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(rootpath)
 
 from dnnlib.miscs import ArgParse, Trainer
-from dnnlib.util import Logger
+from dnnlib.util import Logger, EMA
 from vae2gan.core.loss import G_loss, D_loss
 
 
@@ -19,8 +19,9 @@ class Args(ArgParse):
         self.parser.add_argument("--betas", nargs=2, type=float, default=(0., 0.99), help="betas for optimizer Adam")
         self.parser.add_argument("--loss", nargs=2, type=str, default=('nonsaturating', 'logistic_simplegp'),
                                  help="wgan | saturating | nonsaturating and wgan | wgan_gp | hinge | hinge_gp | logistic | logistic_simplegp")
-        self.parser.add_argument("--nc", type=int, default=1, help="iterations of critic training for every mini-batch data")
-        self.parser.add_argument("--ng", type=int, default=1, help="iterations of generator training for every mini-batch data")
+        self.parser.add_argument("--ema", type=float, default=0.999, help="decay ratio for Generator's weighted EMA")
+        self.parser.add_argument("--nc", type=int, default=1, help="iterations of critic training each turn")
+        self.parser.add_argument("--ng", type=int, default=1, help="iterations of generator training each turn")
         self.parser.add_argument("--img-dir", type=str, default='images', help="directory saving images generated")
         self.parser.add_argument("--log", type=str, default=None, help="file to save the training process log")
 
@@ -40,6 +41,9 @@ class GanTrain(Trainer):
 
         self.epoch = 0
         self.value = 0.
+
+        self.ema = EMA(self.net['gnet'], self.args.ema)
+        self._appendcell(['ema'])
 
         if not os.path.exists(self.args.img_dir):
             os.makedirs(self.args.img_dir, 0o775)
@@ -78,20 +82,31 @@ class GanTrain(Trainer):
                         g_loss.backward()
                         self.optimizer['gnet'].step()
 
+                        self.ema.update()
+
                     if _pf == self.args.print_freq:
                         _pf = 1
                         log.write(f"[epoch: {self.epoch} - {i}/{len(self.train_loader)}]"
                                   f"Loss_dnet: {d_loss:.6f} - Loss_gnet: {g_loss:.6f}\n")
 
-                        fake_images = fake_images.cpu().data
-                        torchvision.utils.save_image(real_images, os.path.join(self.args.img_dir, f"real_sample_{i}.png"),
-                                                     nrow=round(pow(self.args.batch_size, 0.5)), normalize=True, scale_each=True)
-                        torchvision.utils.save_image(fake_images, os.path.join(self.args.img_dir, f"fake_sample_{i}.png"),
-                                                     nrow=round(pow(self.args.batch_size, 0.5)), normalize=True, scale_each=True)
+                        with torch.no_grad():
+                            self.ema.apply_shadow()
+                            latents = torch.randn(self.args.batch_size, self.latent_size, device=self.device)
+                            fake_images = self.net['gnet'](latents)
+                            self.ema.restore()
+
+                        save_image(real_images, os.path.join(self.args.img_dir, f"real_sample_{i}.png"),
+                                   nrow=round(pow(self.args.batch_size, 0.5)), normalize=True, scale_each=True)
+                        save_image(fake_images, os.path.join(self.args.img_dir, f"fake_sample_{i}.png"),
+                                   nrow=round(pow(self.args.batch_size, 0.5)), normalize=True, scale_each=True)
                     else: _pf += 1
                 else: _ic += 1
 
     def validate(self):
+        self.ema.apply_shadow()
+        torch.save(self.ema.model.state_dict(), os.path.join(self.args.chkpt_dir, "generator.pth"))
+        self.ema.restore()
+
         return self.value
 
     @staticmethod
