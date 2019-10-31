@@ -53,7 +53,7 @@ class GanTrain(Trainer):
             log.write(f"epochs: {self.epoch}\n")
             _ic, _pf = 1, 1
             for i, reals in enumerate(self.train_loader, 1):
-                self._grad_enable(self.net['dnet'])
+                self.net['dnet'].requires_grad_(True)
 
                 with torch.no_grad():
                     latents = torch.randn(reals.size(0), self.latent_size, device=self.device)
@@ -72,7 +72,7 @@ class GanTrain(Trainer):
                 if _ic == self.args.nc:
                     _ic = 1
                     for _ in range(self.args.ng):
-                        self._no_grad(self.net['dnet'])
+                        self.net['dnet'].requires_grad_(False)
 
                         latents = torch.randn(reals.size(0), self.latent_size, device=self.device)
                         fake_images = self.net['gnet'](latents)
@@ -108,16 +108,6 @@ class GanTrain(Trainer):
         self.ema.restore()
 
         return self.value
-
-    @staticmethod
-    def _no_grad(net):
-        for module in net.modules():
-            module.requires_grad_(requires_grad=False)
-
-    @staticmethod
-    def _grad_enable(net):
-        for module in net.modules():
-            module.requires_grad_(requires_grad=True)
 
 
 if __name__ == "__main__":
