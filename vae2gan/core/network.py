@@ -153,7 +153,8 @@ class Img2Dis(torch.nn.Module):
         )
         self.sieving = torch.nn.Sequential(*sieving)
         self.final = torch.nn.Sequential(
-            Conv2d(_nf(1) + mbstd_num_features, _nf(1), 3, 1, 1, gain=gain, use_wscale=use_wscale),
+            Conv2d(_nf(1) + [0, mbstd_num_features][mbstd_group_size > 1], _nf(1), 3, 1, 1,
+                   gain=gain, use_wscale=use_wscale),
             EpilogueLayer(_nf(1), 4, activate, False, normalization),
             Conv2d(_nf(1), _nf(1), 4, 1, 0, gain=gain, use_wscale=use_wscale),
             EpilogueLayer(_nf(1), 1, activate, False, normalization),
